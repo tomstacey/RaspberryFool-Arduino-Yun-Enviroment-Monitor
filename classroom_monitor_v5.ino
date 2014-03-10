@@ -4,7 +4,7 @@ Classroom monitor (Learnometer)
 - Verison 2 - Provided ability to export data to google spread sheet via temboo
 - Verison 3 - Removed temboo and add direct link to google spread (python code running on liunx wifi)
 - Version 4 - Tom mucking about
-- Version 5 - Brendon's ticker for time and other changes, Updated to use Adafruit DHT library
+- Version 5 - Brendon's ticker for time and other changes, Updated to use Adafruit DHT library - https://github.com/adafruit/DHT-sensor-library
 
 
 */
