@@ -1,25 +1,11 @@
-
-#include "DHT.h"
-
-//Uses Adafruit DHT Library https://github.com/adafruit/DHT-sensor-library 
-
 /*
-Classroom monitor 
+Classroom monitor (Learnometer)
 - Verison 1 - Light, temperature, humity sensors working
 - Verison 2 - Provided ability to export data to google spread sheet via temboo
 - Verison 3 - Removed temboo and add direct link to google spread (python code running on liunx wifi)
+- Version 4 - Tom mucking about
+- Version 5 - Brendon's ticker for time and other changes, Updated to use Adafruit DHT library
 
-ToDo - list (22/2/2014)
-- Do we need time delays in the setup & confirm the duration
-- Create libary for the sensor functions
-- Fix the timestamp problem
-
-Hardware setup
-- 
-
-Notes
-- to use the console telenet into the box
-- telnet localhost 6571
 
 */
 
@@ -31,26 +17,28 @@ Notes
 #include <Bridge.h>
 #include <YunServer.h>
 #include <YunClient.h>
+#include <DHT.h>
+#include "DHT.h"
 
 #define DHTTYPE DHT11
 #define DHTPIN 7
 
-//dht DHT11;
-
 DHT dht(DHTPIN, DHTTYPE);
+
 
 int BH1750_address = 0x23; // i2c Addresse
 float temperature_post;
 byte buff[2];
 
 //const int ledPin = 13; // the pin that the LED is attached to
-int incomingByte;      // a variable to read incoming serial data into
+int incomingByte, timestamp_counter=0;      // a variable to read incoming serial data into
 int timestamp, nodeid, humidity, temperature, audiolevel;
+long master_tick;
 String startString, timeString;
-
+//time_t timeValue;
+//time_t Foo;
 
 char python_key[2];
-
 
 int analogPin = A1; 
 
@@ -59,12 +47,18 @@ void setup()
   // initialize the bridge
   Bridge.begin();
   delay(500);          // Delay to allow the bridge to come up
-  
+
+/*
+  Console.begin(); 
+
+   while (!Console){
+     ; // wait for Console port to connect.
+   }
+   Console.println("You're connected to the Console!!!!");
+ */
   Wire.begin();
   BH1750_Init(BH1750_address);
   delay(500);
-  
-  dht.begin();
   
   syncTime();
 
@@ -81,34 +75,69 @@ void loop()
   String dataString;
   int system_status;
   double db;
-
+  Process wifiCheck;  // initialize a new process
   int chk = dht.readTemperature();
 
-  // Read the light sensor
-  if(BH1750_Read(BH1750_address)==2)
+  if(master_tick > 1000)
   {
-    light_valf=((buff[0]<<8)|buff[1])/1.2;
-  }
-
-  // Send the data to google spreadsheet
-   //timeString = getTimeStamp2();
-  timeString = "";
-
-
-  audiolevel = analogRead(analogPin);    
-  db =  20.0  * log10 (audiolevel  +1.);
-
-  Bridge.put("timestamp", String(timeString));           // row a = time stamp
-  Bridge.put("nodeid", String(nodeid));                  // row b = node id (hard coded)
-  Bridge.put("humidity", String(dht.readHumidity()));        // row c = humidity
-  Bridge.put("temperature", String(dht.readTemperature()));  // row d = temperature
-  Bridge.put("lightlevel", String(light_valf));          // row e = light level
-  Bridge.put("audiolevel", String(db));          // row f = audio level
   
-  // set the bridge to update all the values in the spread sheet  
-  Bridge.put("update", String(1));
+    if(timestamp_counter < 5)
+    {
+      syncTime();
+      timestamp_counter = timestamp_counter +1;
+  //    Console.print(F(" time stamp-"));
+  //    Console.println(timestamp_counter);
+    }
+/*
+   wifiCheck.runShellCommand("/usr/bin/pretty-wifi-info.lua | grep Signal");  // command you want to run
+  char  c = wifiCheck.read();
+  while(wifiCheck.running());
+  int  result = wifiCheck.parseInt();
+   // while there's any characters coming back from the 
+   // process, print them to the serial monitor:
+   if (result > 30) 
+   {
+     Console.println(F("Internet connection okay"));
+   }
+   else
+   {
+     Console.println(F("Internet connection not okay"));
+   }
+*/
+
+//      Console.println(F("Sensor read & spreadsheet write"));
+      master_tick = 0;
+      
+      // Read the light sensor
+      if(BH1750_Read(BH1750_address)==2)
+      {
+        light_valf=((buff[0]<<8)|buff[1])/1.2;
+      }
+
+      // Send the data to google spreadsheet
+      timeString = getTimeStamp();
+  
+      audiolevel = analogRead(A1);    
+      //db =  20.0  * log10 (audiolevel  +1.);
+  //    audiolevel = audiolevel;
+
+      Bridge.put("timestamp", String(timeString));           // row a = time stamp
+      Bridge.put("nodeid", String(nodeid));                  // row b = node id (hard coded)
+  	Bridge.put("humidity", String(dht.readHumidity()));        // row c = humidity
+  	Bridge.put("temperature", String(dht.readTemperature()));  // row d = temperature
+      Bridge.put("lightlevel", String(light_valf));          // row e = light level
+      Bridge.put("audiolevel", String(audiolevel));          // row f = audio level
+  
+      // set the bridge to update all the values in the spread sheet  
+      Bridge.put("update", String(1));
  
-  delay(30000);
+  }
+  else
+  {
+     master_tick = master_tick +1;
+  }
+ 
+  delay(50);
 }
 
 // ===========================
@@ -143,7 +172,7 @@ void syncTime(){
 }
 
 
-/*
+
 // This function return a string with the time stamp
  String getTimeStamp() 
  {
@@ -166,6 +195,8 @@ void syncTime(){
    return result;
 }
 
+
+/*
 String getTimeStamp2() 
  {
    String result;
@@ -187,6 +218,7 @@ String getTimeStamp2()
   return result;
 }
 
-
 */
+
+
 
