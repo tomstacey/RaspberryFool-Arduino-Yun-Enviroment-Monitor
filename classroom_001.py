@@ -14,7 +14,7 @@ value = bridgeclient()
 
 #open config file
 	
-csv_file_object = csv.reader(open('config.txt', 'rb')) 
+csv_file_object = csv.reader(open('/usr/brendon/config.txt', 'rb')) #config file location needs to be correct for your Yun
 header = csv_file_object.next()  
 data=[]                          #Create a variable called 'data'
 for row in csv_file_object:      #Run through each row in the csv file
