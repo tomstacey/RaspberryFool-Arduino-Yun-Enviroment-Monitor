@@ -4,7 +4,7 @@ import gspread
 import time
 import sys
 import csv
-#import numpy
+import os
 
 sys.path.insert(0, '/usr/lib/python2.7/bridge/')
 
@@ -37,18 +37,18 @@ row=2
 col=0
 
 
+for i in range (0, 5):
+	os.system ("ntpd -q -p 0.europe.pool.ntp.org -p 0.openwrt.pool.ntp.org")
+	time.sleep(2)
+
 try:
-#       print("python has started")
+
         while True:
                 update = value.get('update')
-                #print(update)
-                #print(lightlevel)
+
                 if update > 2:
                         value.put('update', 0)
-#                       print("Update spreadsheet")
-
-#                       timestamp = ("=now()")
-#                       timestamp = time.strftime("%d:%m:%Y-%H:%M:%S")         
+     
                         timestamp = value.get('timestamp')
 #                       print(timestamp)
                         nodeid = value.get('nodeid')
@@ -63,13 +63,11 @@ try:
                         wks.update_cell(row, 4, temperature)
                         wks.update_cell(row, 5, lightlevel)
                         wks.update_cell(row, 6, audiolevel)
-                        #timestamp = wks.cell(row, 1)
-                        #print(timestamp)
-                        #wks.update_cell(row, 1, timestamp)
+
 
                         row += 1
 
-#       time.sleep(1)
+
         update = 0
 
 
